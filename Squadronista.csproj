@@ -2,11 +2,14 @@
   <PropertyGroup>
     <AssemblyName>Squadronista</AssemblyName>
     <Authors>liza</Authors>
-    <Version>1.0.0.1</Version>
+    <Version>1.0.0.2</Version>
     <Description>Squadron Mission Solver</Description>
     <PackageProjectUrl>https://github.com/VeraNala/Squadronista</PackageProjectUrl>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="ECommons" Version="3.0.1.17" />
+  </ItemGroup>
 
   <ItemGroup>
     <Reference Include="LLib">

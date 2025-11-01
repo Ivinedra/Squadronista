@@ -3,8 +3,11 @@ using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
+using Dalamud.Memory;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using ECommons;
+using ECommons.ExcelServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -16,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 
 #nullable enable
 namespace Squadronista;
@@ -50,7 +54,8 @@ public sealed class SquadronistaPlugin : IDalamudPlugin, IDisposable
     {
         if (dataManager == null)
             throw new ArgumentNullException(nameof(dataManager));
-            
+
+        ECommonsMain.Init(pluginInterface, this);
         _pluginInterface = pluginInterface;
         _clientState = clientState;
         _pluginLog = pluginLog;
@@ -173,6 +178,39 @@ public sealed class SquadronistaPlugin : IDalamudPlugin, IDisposable
                     name = actualName;
                 }
             }
+
+            var physical = 0;
+            var mental = 0;
+            var tactical = 0;
+
+            for(int z = 0; z < memberCount && z < 8; z++)
+            {
+                var nameIndex = 6 + z * 15;
+                var n = (AtkUnitBase*)args.Addon.Address;
+                var n2 = n->AtkValues[nameIndex];
+                if(n2.Type == ValueType.String)
+                {
+                    if(n2.GetValueAsString() == name)
+                    {
+                        physical = n->AtkValues[13 + z * 15].Int;
+                        mental = n->AtkValues[14 + z * 15].Int;
+                        tactical = n->AtkValues[15 + z * 15].Int;
+                        break;
+                    }
+                }
+            }
+
+            _pluginLog.Debug($"""
+                {MemoryHelper.ReadRaw((nint)member, 85).ToHexString()}
+                Member {i}
+                {name}
+                Level {member->Level}
+                ClassJob {(Job)member->ClassJob}
+                Physical {physical}
+                Mental {mental}
+                Tactical {tactical}
+                Experience {member->Experience}
+                """);
             
             members.Add(SquadronMember.Create(
                 name,
@@ -184,9 +222,9 @@ public sealed class SquadronistaPlugin : IDalamudPlugin, IDisposable
                 _dataManager,
                 member->ClassJob,
                 member->Experience,
-                member->MasteryOffensive,
-                member->MasteryDefensive,
-                member->MasteryBalanced
+                (byte)physical,
+                (byte)mental,
+                (byte)tactical
             ));
         }
 
@@ -251,10 +289,8 @@ public sealed class SquadronistaPlugin : IDalamudPlugin, IDisposable
             return;
 
         var agent = FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentGcArmyExpedition.Instance();
-        if (agent == null || agent->SelectedRow >= AvailableMissions.Count)
-            return;
 
-        var selectedMission = AvailableMissions[agent->SelectedRow];
+        var selectedMission = AvailableMissions.First(x => x.Id == Utils.SelectedMission);
         var missionAttributes = selectedMission.PossibleAttributes.First();
 
         // Check if we're already calculating for this mission
@@ -292,6 +328,7 @@ public sealed class SquadronistaPlugin : IDalamudPlugin, IDisposable
         _addonLifecycle.UnregisterListener(UpdateSquadronState);
         _addonLifecycle.UnregisterListener(UpdateExpeditionState);
         _addonLifecycle.UnregisterListener(CheckForMissionChange);
+        ECommonsMain.Dispose();
     }
 
     public class MissionResults
