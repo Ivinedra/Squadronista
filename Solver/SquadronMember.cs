@@ -1,7 +1,10 @@
 using Dalamud.Plugin.Services;
+using ECommons;
+using ECommons.Logging;
 using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 #nullable enable
 namespace Squadronista.Solver;
@@ -32,11 +35,12 @@ public sealed record SquadronMember
 
     public SquadronMember CalculateGrowth(IDataManager dataManager, uint classJob, uint experience, byte physicalAbility, byte mentalAbility, byte tacticalAbility)
     {
+        //PluginLog.Information($"Begin CalculateGrowth");
         var growthSheet = dataManager.GetExcelSheet<GcArmyMemberGrow>();
         if (growthSheet == null)
             return this;
 
-        var growthData = growthSheet.GetRowOrDefault(classJob + (experience << 16));
+        var growthData = growthSheet.FirstOrNull(x => x.ClassJob.RowId == classJob);
         if (growthData == null || !growthData.HasValue)
             return this;
 
@@ -47,6 +51,7 @@ public sealed record SquadronMember
             paramsList.Add((memberParam.Physical, memberParam.Mental, memberParam.Tactical));
         }
         paramsList.Add((growth.Unknown1, growth.Unknown2, growth.Unknown3));
+        //PluginLog.Information($"{(growth.Unknown1, growth.Unknown2, growth.Unknown3)}");
 
         return this with
         {

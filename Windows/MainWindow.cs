@@ -99,7 +99,8 @@ internal sealed class MainWindow : LWindow, IDisposable
             return;
         }
 
-        var selectedMission = _plugin.AvailableMissions[agentExpedition->SelectedRow];
+        var selectedMission = _plugin.AvailableMissions.FirstOrDefault(x => x.Id == Utils.SelectedMission);
+        if(selectedMission == null) return;
         if (_plugin.CurrentSquadronMissionResults == null)
         {
             ImGui.Text("Rebuilding...");
