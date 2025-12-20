@@ -24,7 +24,7 @@ using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 #nullable enable
 namespace Squadronista;
 
-public sealed class SquadronistaPlugin : IDalamudPlugin, IDisposable
+public sealed class SquadronistaPlugin : IDalamudPlugin
 {
     private readonly WindowSystem _windowSystem = new WindowSystem(nameof(SquadronistaPlugin));
     private readonly IDalamudPluginInterface _pluginInterface;
@@ -55,7 +55,7 @@ public sealed class SquadronistaPlugin : IDalamudPlugin, IDisposable
         if (dataManager == null)
             throw new ArgumentNullException(nameof(dataManager));
 
-        ECommonsMain.Init(pluginInterface, this);
+        ECommons.ECommonsMain.Init(pluginInterface, this);
         _pluginInterface = pluginInterface;
         _clientState = clientState;
         _pluginLog = pluginLog;
